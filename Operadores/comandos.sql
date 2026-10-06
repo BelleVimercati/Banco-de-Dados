@@ -37,4 +37,101 @@ INSERT INTO "produtos" ("nome","categoria","preco","taxa_importacao","estoque","
 ('Câmera de Ação 4K','video',89900,7000,45,0,'2049-11-21 13:56:12'),
 ('Roteador WiFi 6E','rede',64900,0,75,0,'2049-12-06 11:11:11');
 
-SELECT * FROM produtos WHERE lancamento = 1;
+SELECT * FROM produtos WHERE lancamento = 0;
+
+/* Para ignorar o case sensitive */
+SELECT * FROM produtos WHERE nome = 'Impressora 3D mini' COLLATE NOCASE;
+
+SELECT * FROM produtos WHERE nome LIKE '% pro';
+SELECT * FROM produtos WHERE nome LIKE '%TB%';
+
+/* Usando subquerys: selecionar todas as aulas onde de javascript*/
+/* criar as tabelas no banco */
+CREATE TABLE "user" (
+  "id" INTEGER PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "password" TEXT NOT NULL,
+  "email" TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  "created" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+) STRICT;
+
+CREATE TABLE "courses" (
+  id INTEGER PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  aulas INTEGER NOT NULL,
+  horas INTEGER NOT NULL,
+  "created" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+) STRICT;
+
+CREATE TABLE lessons (
+  id INTEGER NOT NULL PRIMARY KEY,
+  course_id INTEGER NOT NULL,
+  slug TEXT NOT NULL COLLATE NOCASE,
+  title TEXT UNIQUE NOT NULL,
+  materia TEXT NOT NULL,
+  materia_slug TEXT NOT NULL UNIQUE,
+  seconds INTEGER NOT NULL,
+  video TEXT NOT NULL,
+  description TEXT NOT NULL,
+  lesson_order TEXT NOT NULL UNIQUE,
+  free INTEGER NOT NULL DEFAULT 0 CHECK (free IN (0, 1)),
+  "created" TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY ("course_id") REFERENCES "courses" ("id"),
+  UNIQUE ("course_id", "id")
+) STRICT;
+
+DROP TABLE lessons;
+
+CREATE TABLE lessonsCompleted (
+  user_id INTEGER NOT NULL,
+  course_id INTEGER NOT NULL,
+  lesson_id INTEGER NOT NULL,
+  completed TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, course_id, lesson_id),
+  FOREIGN KEY ("user_id") REFERENCES users (id) ON DELETE CASCADE,
+  FOREIGN KEY (course_id) REFERENCES course (id),
+  FOREIGN KEY (lesson_id) REFERENCES lessons (id)
+) STRICT;
+
+CREATE TABLE certificates (
+  id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  course_id INTEGER NOT NULL,
+  completed TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, course_id) FOREIGN KEY (user_id) REFERENCES USER(id) ON DELETE CASCADE,
+  FOREIGN KEY (course_id) REFERENCES courses (id)
+) STRICT;
+
+INSERT INTO courses (slug, title, description, aulas, horas) VALUES ('javascript-basico', 'javascript-basico', 'javascript-basico', 2, 30);
+INSERT INTO
+  lessons (
+    course_id,
+    slug,
+    title,
+    materia,
+    materia_slug,
+    seconds,
+    video,
+    description,
+    lesson_order,
+    free
+  )
+VALUES
+  (1, 'Abertura', 'Abertura', 'Programação', 'Prog', 1000, 'teste.mp4', 'Abertura', '1', 1);
+
+/* criando a query separada x aninhada */
+SELECT id FROM courses WHERE slug = 'javascript-basico';
+SELECT * FROM lessons WHERE course_id = 1;
+
+SELECT * FROM lessons WHERE (SELECT id FROM courses WHERE slug = 'javascript-basico');
+
+
+/* CTE - Common Table Expression: Tabela temporária 
+Selecionando produtos que possuem o preço maior do que o preço médio*/
+WITH preco_medio AS (
+  SELECT AVG(preco) AS media FROM produtos
+)
+SELECT * FROM produtos WHERE preco > (SELECT media FROM preco_medio);
+
